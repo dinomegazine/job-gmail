@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8"><title>Dashboard - GmailJobz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white p-8">
+    <div class="max-w-5xl mx-auto">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="text-2xl font-bold">Halo, {{ user['username'] }}</h1>
+            <a href="/logout" class="bg-red-600 px-4 py-2 rounded">Logout</a>
+        </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="{% if category == 'error' %}bg-red-600 border-red-800{% else %}bg-green-600 border-green-800{% endif %} text-white p-3 rounded mb-6 text-sm font-bold border shadow">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <div class="bg-gray-800 p-6 rounded-lg flex flex-col justify-center border border-gray-700">
+                <p class="text-gray-400 text-sm mb-1">Saldo Anda Saat Ini</p>
+                <p class="text-4xl font-bold text-green-400">Rp {{ user['saldo'] }}</p>
+            </div>
+            <div class="bg-gray-800 p-6 rounded-lg border border-gray-700">
+                <h3 class="font-bold mb-3 text-blue-400">Tarik Saldo (Min. Rp 5.000)</h3>
+                <form method="POST" action="/tarik-saldo" class="flex flex-col gap-3">
+                    <input type="number" name="jumlah" placeholder="Jumlah (Rp)" required class="bg-gray-700 border border-gray-600 p-2 rounded w-full text-sm">
+                    <select name="metode" required class="bg-gray-700 border border-gray-600 p-2 rounded w-full text-sm">
+                        <option value="DANA">DANA</option>
+                        <option value="OVO">OVO</option>
+                        <option value="GoPay">GoPay</option>
+                        <option value="Bank">Transfer Bank</option>
+                    </select>
+                    <input type="text" name="nomor_tujuan" placeholder="Nomor HP / No Rekening" required class="bg-gray-700 border border-gray-600 p-2 rounded w-full text-sm">
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-500 p-2 rounded font-bold text-sm mt-1">Ajukan Penarikan</button>
+                </form>
+            </div>
+        </div>
+
+        {% if saya %}
+        <h3 class="text-lg font-bold mb-4 text-yellow-400">Tugas Di Tangan Anda</h3>
+        <div class="bg-gray-800 rounded-lg overflow-hidden border border-yellow-600 mb-8">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-gray-700">
+                    <tr>
+                        <th class="p-3">Email</th>
+                        <th class="p-3">Password</th>
+                        <th class="p-3">Pemulihan</th>
+                        <th class="p-3">Sisa Waktu</th>
+                        <th class="p-3 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in saya %}
+                    <tr class="border-b border-gray-700">
+                        <td class="p-3 font-mono">{{ row['email'] }}</td>
+                        <td class="p-3 font-mono">{{ row['password'] }}</td>
+                        <td class="p-3 font-mono text-green-400">{{ row['email_pemulihan'] }}</td>
+                        <td class="p-3 font-bold text-red-400 timer-cell" data-waktu="{{ row['waktu_diambil'] }}">
+                            {% if row['status'] == 'diambil' %}Menghitung...{% else %}-{% endif %}
+                        </td>
+                        <td class="p-3 text-center">
+                            {% if row['status'] == 'diambil' %}
+                            <a href="/selesai/{{ row['id'] }}" class="bg-blue-600 px-4 py-1 rounded text-xs font-bold hover:bg-blue-500" onclick="return confirm('Kirim tugas?')">Tandai Selesai</a>
+                            {% else %}
+                            <span class="text-blue-400 text-xs">Menunggu Admin</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+
+        <h3 class="text-lg font-bold mb-4">Job Tersedia (Rebutan)</h3>
+        <div class="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 mb-8">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-gray-700">
+                    <tr>
+                        <th class="p-3">Email</th>
+                        <th class="p-3">Pemulihan</th>
+                        <th class="p-3 text-center">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in tersedia %}
+                    <tr class="border-b border-gray-700 hover:bg-gray-750">
+                        <td class="p-3 font-mono">{{ row['email'] }}</td>
+                        <td class="p-3 font-mono text-green-400">{{ row['email_pemulihan'] }}</td>
+                        <td class="p-3 text-center">
+                            <a href="/ambil/{{ row['id'] }}" class="bg-green-600 px-4 py-1 rounded text-xs font-bold hover:bg-green-500" onclick="return confirm('Ambil tugas ini? Waktu 30 menit akan berjalan.')">Ambil Job</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" class="p-6 text-center text-gray-500">Belum ada job tersedia.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <h3 class="text-lg font-bold mb-4 text-gray-300">Riwayat Penarikan Saldo</h3>
+        <div class="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-gray-700">
+                    <tr><th class="p-3">Tanggal</th><th class="p-3">Jumlah</th><th class="p-3">Metode & Tujuan</th><th class="p-3">Status</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in riwayat_tarik %}
+                    <tr class="border-b border-gray-700">
+                        <td class="p-3 text-gray-400">{{ row['tanggal'] }}</td>
+                        <td class="p-3 font-bold text-red-400">- Rp {{ row['jumlah'] }}</td>
+                        <td class="p-3">{{ row['metode'] }} - {{ row['nomor_tujuan'] }}</td>
+                        <td class="p-3">
+                            {% if row['status'] == 'pending' %}<span class="text-yellow-400">Diproses</span>
+                            {% else %}<span class="text-green-400">Sukses</span>{% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="p-6 text-center text-gray-500">Belum ada riwayat penarikan.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SCRIPT UNTUK TIMER 30 MENIT -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const timerCells = document.querySelectorAll('.timer-cell');
+            timerCells.forEach(cell => {
+                const waktuAmbilStr = cell.getAttribute('data-waktu');
+                if (!waktuAmbilStr || waktuAmbilStr === 'None') return;
+                const parts = waktuAmbilStr.split(/[- :]/);
+                const waktuAmbil = new Date(parts[0], parts[1]-1, parts[2], parts[3], parts[4], parts[5]);
+                const batasWaktu = new Date(waktuAmbil.getTime() + 30 * 60000);
+                const updateTimer = setInterval(() => {
+                    const now = new Date();
+                    const selisih = batasWaktu - now;
+                    if (selisih <= 0) {
+                        clearInterval(updateTimer);
+                        cell.innerHTML = "<span class='text-red-500 font-bold'>WAKTU HABIS</span>";
+                    } else {
+                        const menit = Math.floor((selisih % (1000 * 60 * 60)) / (1000 * 60));
+                        const detik = Math.floor((selisih % (1000 * 60)) / 1000);
+                        cell.innerHTML = `<span class='text-yellow-400'>${menit}m ${detik}s</span>`;
+                    }
+                }, 1000);
+            });
+        });
+    </script>
+</body>
+</html>

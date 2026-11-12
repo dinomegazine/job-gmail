@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - GmailJobz</title>
+    
+    <!-- Tag PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#111827">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <nav class="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center shadow-lg">
+        <div class="flex items-center gap-3">
+            <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+            <h1 class="text-xl font-bold text-gray-100">GMAILJOBZ - ADMIN</h1>
+        </div>
+        <a href="/logout" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded text-sm font-bold transition">Logout</a>
+    </nav>
+
+    <div class="max-w-6xl mx-auto p-6 md:p-8">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="bg-green-600 text-white p-3 rounded mb-6 text-sm font-bold shadow">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <!-- PENARIKAN SALDO -->
+        <div class="mb-10">
+            <h2 class="text-2xl font-bold mb-4 text-red-400">Pengajuan Penarikan Saldo</h2>
+            <div class="bg-gray-800 rounded-lg overflow-hidden border border-red-500 shadow-xl overflow-x-auto">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                    <thead class="bg-gray-900 text-gray-400 border-b border-gray-700">
+                        <tr><th class="p-4">Worker</th><th class="p-4">Jumlah</th><th class="p-4">Metode</th><th class="p-4">Nomor Tujuan</th><th class="p-4 text-center">Aksi</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for p in penarikan %}
+                        <tr class="border-b border-gray-700 hover:bg-gray-750">
+                            <td class="p-4 font-bold text-blue-400">{{ p['username'] }}</td>
+                            <td class="p-4 font-bold text-red-400">Rp {{ p['jumlah'] }}</td>
+                            <td class="p-4">{{ p['metode'] }}</td>
+                            <td class="p-4 font-mono text-lg select-all text-green-400">{{ p['nomor_tujuan'] }}</td>
+                            <td class="p-4 text-center">
+                                <a href="/admin-selesai-tarik/{{ p['id'] }}" class="bg-green-600 hover:bg-green-500 px-4 py-2 rounded text-xs font-bold shadow transition" onclick="return confirm('Pastikan kamu sudah transfer. Tandai selesai?')">Sudah Ditransfer</a>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="p-6 text-center text-gray-500">Tidak ada pengajuan penarikan.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FORM TUGAS BARU -->
+        <div class="bg-gray-800 p-6 rounded-lg mb-8 border border-gray-700 shadow-md">
+            <h2 class="text-lg font-bold mb-4 text-green-400">Buat Data Tugas Baru</h2>
+            <form method="POST" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <input type="email" name="email" placeholder="Email Gmail" required class="bg-gray-700 border border-gray-600 p-3 rounded w-full text-sm">
+                <input type="text" name="password" placeholder="Password Gmail" required class="bg-gray-700 border border-gray-600 p-3 rounded w-full text-sm">
+                <input type="email" name="pemulihan" placeholder="Email Pemulihan" required class="bg-gray-700 border border-gray-600 p-3 rounded w-full text-sm">
+                <button type="submit" class="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded font-bold transition text-sm">Tambah Tugas</button>
+            </form>
+        </div>
+
+        <!-- TABEL TUGAS -->
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold">Daftar Tugas</h2>
+            <button onclick="window.location.reload()" class="bg-gray-700 hover:bg-gray-600 px-4 py-2 rounded text-sm">Refresh Data</button>
+        </div>
+        
+        <div class="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 shadow-xl overflow-x-auto">
+            <table class="w-full text-left text-sm whitespace-nowrap">
+                <thead class="bg-gray-900 text-gray-400 border-b border-gray-700">
+                    <tr><th class="p-4">Email</th><th class="p-4">Pemulihan</th><th class="p-4">Pekerja</th><th class="p-4">Status</th><th class="p-4 text-center">Aksi</th></tr>
+                </thead>
+                <tbody>
+                    {% for row in data %}
+                    <tr class="border-b border-gray-700 hover:bg-gray-750">
+                        <td class="p-4 font-mono">{{ row['email'] }}</td>
+                        <td class="p-4 font-mono text-gray-400">{{ row['email_pemulihan'] }}</td>
+                        <td class="p-4 font-bold text-blue-400">{{ row['username'] or '-' }}</td>
+                        <td class="p-4">
+                            {% if row['status'] == 'tersedia' %}
+                                <span class="bg-green-900 text-green-300 py-1 px-3 rounded-full text-xs font-bold">Tersedia</span>
+                            {% elif row['status'] == 'diambil' %}
+                                <span class="bg-yellow-900 text-yellow-300 py-1 px-3 rounded-full text-xs font-bold">Dikerjakan</span>
+                            {% elif row['status'] == 'menunggu_verifikasi' %}
+                                <span class="bg-blue-900 text-blue-300 py-1 px-3 rounded-full text-xs font-bold animate-pulse">Cek Verifikasi!</span>
+                            {% else %}
+                                <span class="bg-gray-700 text-gray-400 py-1 px-3 rounded-full text-xs font-bold">Selesai</span>
+                            {% endif %}
+                        </td>
+                        <td class="p-4 text-center space-x-2">
+                            {% if row['status'] == 'menunggu_verifikasi' %}
+                                <a href="/admin-approve/{{ row['id'] }}" class="bg-green-600 px-4 py-2 rounded text-xs font-bold hover:bg-green-500">Approve</a>
+                                <a href="/admin-reject/{{ row['id'] }}" class="bg-red-600 px-4 py-2 rounded text-xs font-bold hover:bg-red-500" onclick="return confirm('Tolak?')">Tolak</a>
+                            {% elif row['status'] == 'diambil' %}
+                                <a href="/admin-reject/{{ row['id'] }}" class="bg-red-800 text-white px-4 py-2 rounded text-xs font-bold hover:bg-red-700" onclick="return confirm('Batalkan tugas ini?')">Batalkan</a>
+                            {% else %}
+                                <span class="text-gray-600">-</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="p-8 text-center text-gray-500">Belum ada data tugas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- SCRIPT SERVICE WORKER UNTUK PWA -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js');
+      }
+    </script>
+</body>
+</html>
