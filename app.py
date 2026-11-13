@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_from_directory
 import sqlite3
 import datetime
+import os
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
@@ -169,7 +170,6 @@ def tarik_saldo():
 # --- AUTENTIKASI & PANEL ADMIN ---
 @app.route('/admin-login', methods=['GET', 'POST'])
 def admin_login():
-    # Jika sudah login sebagai admin, langsung lempar ke panel
     if session.get('role') == 'admin':
         return redirect(url_for('admin_panel'))
 
@@ -179,7 +179,7 @@ def admin_login():
         with get_db() as conn:
             user = conn.execute("SELECT * FROM users WHERE username = ? AND role = 'admin'", (username,)).fetchone()
         if user and check_password_hash(user['password'], password):
-            session.permanent = True  # INGAT LOGIN 30 HARI
+            session.permanent = True
             session['user_id'] = user['id']
             session['role'] = 'admin'
             return redirect(url_for('admin_panel'))
@@ -240,4 +240,6 @@ def selesai_tarik(id):
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True, port=5000)
+    # Botkeep/Docker butuh host 0.0.0.0 dan port dinamis
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
